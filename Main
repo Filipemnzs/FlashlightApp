@@ -1,0 +1,180 @@
+package com.example.flashlightapp;
+
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
+import android.media.MediaPlayer;
+import android.os.Build;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+
+public class MainActivity extends AppCompatActivity {
+
+
+
+    private CameraManager objCameraMng;
+
+    private String mCameraId;
+
+    private Button ivOnOff;
+
+    private MediaPlayer objMediaPlayer;
+
+    private Boolean isTorchOn;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        initializeUI();
+
+
+        ivOnOff.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    if (isTorchOn){
+                        turnOffLight();
+                        isTorchOn = false;
+                    }
+                    else{
+                        turnOnLight();
+                        isTorchOn = true;
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public void initializeUI(){
+        ivOnOff = (Button)findViewById(R.id.btn_flashlight);
+
+        isTorchOn = false;
+
+        Boolean isFlashAvailable = getApplicationContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+
+        /*
+        make sure flash is available, if not warn user
+         */
+        if(!isFlashAvailable){
+            AlertDialog alert = new AlertDialog.Builder(MainActivity.this).create();
+            alert.setTitle(getString(R.string.app_name));
+            alert.setMessage(getString(R.string.msg_error));
+            alert.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.lbl_ok), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            });
+            alert.show();
+            return;
+        }
+
+        /*
+        get access to the camera flash
+         */
+        objCameraMng = (CameraManager)getSystemService(this.CAMERA_SERVICE);
+        try {
+            mCameraId = objCameraMng.getCameraIdList()[0];
+        }catch (CameraAccessException e){
+            e.printStackTrace();
+        }
+    }
+
+
+    /*
+    Method for turning on flashlight
+     */
+    public void turnOnLight(){
+        try {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                objCameraMng.setTorchMode(mCameraId, true);
+                //playOnOffSound();
+
+                /*
+                Bellow is code for changing the image, however I'm using a simple button
+                 */
+                //ivOnOff.setImageResource(R.drawable.on);
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
+    /*
+    Method for turning off flashlight
+     */
+    public void turnOffLight(){
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                objCameraMng.setTorchMode(mCameraId, false);
+                //playOnOffSound();
+
+                /*
+                Bellow is code for changing the image, however I'm using a simple button
+                 */
+                //ivOnOff.setImageResource(R.drawable.on);\
+
+            }
+        }catch(Exception e){
+                e.printStackTrace();
+            }
+
+    }
+
+    /*
+     Example Method for playing sound when button is pressed
+     */
+    /*private void playOnOffSound(){
+        objMediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.flash_sound);
+        objMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                mp.release();
+            }
+        });
+        objMediaPlayer.start();
+    }
+    */
+
+
+
+    /*
+    Methods to On and Off the torch according to screen On and Off
+     */
+    @Override
+    protected void onStop(){
+        super.onStop();
+        if(isTorchOn){
+            turnOffLight();
+        }
+    }
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+        if(isTorchOn){
+            turnOffLight();
+        }
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        if(isTorchOn){
+            turnOffLight();
+        }
+    }
+
+
+}
